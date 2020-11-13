@@ -1,0 +1,84 @@
+import sys
+from progressbar import *
+import os
+import shutil
+import random
+import linecache
+from PIL import Image
+file_dir = sys.argv[1]
+if os.path.exists(file_dir):
+    shutil.rmtree(file_dir)#删除再建立
+    os.makedirs(file_dir)
+else:
+    os.makedirs(file_dir)
+
+os.makedirs(file_dir+"/images")
+os.makedirs(file_dir+"/labels")
+os.makedirs(file_dir+"/images/train")
+os.makedirs(file_dir+"/images/val")
+os.makedirs(file_dir+"/labels/train")
+os.makedirs(file_dir+"/labels/val")
+train_rate = 0.8
+def convert():
+    lines = linecache.getlines("./data/train.txt")
+    line_num = len(lines)
+    widgets = ['converting: ', Percentage(), ' ', Bar('#'), ' ', Timer(), ' ']
+    bar_convert = progressbar.ProgressBar(widgets=widgets, maxval=line_num)
+    bar_convert.start()
+    line_count = 0
+
+    for line in lines:
+        train_tag = False
+        line = line.split()
+        filename = line[0]
+        dstname_train = file_dir+"/images/train/"+os.path.split(filename)[1]
+        dstname_val = file_dir+"/images/val/"+os.path.split(filename)[1]
+        if random.random()<train_rate:
+            train_tag=True
+        else:
+            train_tag=False
+        if True:
+            shutil.copyfile(filename, dstname_train)
+        if True:
+            shutil.copyfile(filename, dstname_val)
+        image = Image.open(filename)
+        width_ori, height_ori = image.size
+        dstlabelname_train = file_dir+"/labels/train/"+os.path.split(filename)[1].split(".")[0]+".txt"
+        dstlabelname_val = file_dir+"/labels/val/"+os.path.split(filename)[1].split(".")[0]+".txt"
+        if True:
+            with open(dstlabelname_train,"w") as flabel_train:
+                for index in range(1, len(line),1):
+                    item = line[index]
+                    item = item.split(",")
+                    class_type = item[4]
+                    xmin = float(item[0])/width_ori
+                    ymin = float(item[1])/height_ori
+                    xmax = float(item[2])/width_ori
+                    ymax = float(item[3])/height_ori
+                    xcenter = (xmin+xmax)/2.0
+                    ycenter = (ymin+ymax)/2.0
+                    width = xmax - xmin
+                    height = ymax - ymin
+                    print("%s %.6f %.6f %.6f %.6f" % (class_type, xcenter, ycenter, width, height), file=flabel_train)
+        if True:
+            with open(dstlabelname_val,"w") as flabel_val:
+                for index in range(1, len(line),1):
+                    item = line[index]
+                    item = item.split(",")
+                    class_type = item[4]
+                    xmin = float(item[0])/width_ori
+                    ymin = float(item[1])/height_ori
+                    xmax = float(item[2])/width_ori
+                    ymax = float(item[3])/height_ori
+                    xcenter = (xmin+xmax)/2.0
+                    ycenter = (ymin+ymax)/2.0
+                    width = xmax - xmin
+                    height = ymax - ymin
+                    print("%s %.6f %.6f %.6f %.6f" % (class_type, xcenter, ycenter, width, height), file=flabel_val)
+
+                
+        line_count += 1
+        bar_convert.update(line_count)
+    bar_convert.finish()
+
+convert()
